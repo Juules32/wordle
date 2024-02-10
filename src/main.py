@@ -2,57 +2,42 @@ from typing import Final
 import os
 from dotenv import load_dotenv
 from discord import Intents, Client, Message
-from responses import get_response
+from responses import get_responses
 from parsing import *
 
-# STEP 0: LOAD OUR TOKEN FROM SOMEWHERE SAFE
+# Load local token
 load_dotenv()
 TOKEN: Final[str] = os.getenv('DISCORD_TOKEN')
 
-# STEP 1: BOT SETUP
+# Setup bot
 intents: Intents = Intents.default()
 intents.message_content = True  # NOQA
-client: Client = Client(intents=intents)
+bot: Client = Client(intents=intents)
 
-
-userdata = {}
-
-# STEP 2: MESSAGE FUNCTIONALITY
-async def send_message(message: Message) -> None:
-    if not message.content:
-        print('(Message was empty because intents were not enabled probably)')
-        return
-
-    if is_private := message.content[0] == '?':
-        user_message = message.content[1:]
-
-    try:
-        response: str = get_response(message, userdata)
-        await message.author.send(response) if is_private else await message.channel.send(response)
-    except Exception as e:
-        print(e)
-
-
-# STEP 3: HANDLING THE STARTUP FOR OUR BOT
-@client.event
+# Handle bot startup
+@bot.event
 async def on_ready() -> None:
-    print(f'{client.user} is now running!')
+    print(f'{bot.user} is now running!')
 
-
-# STEP 4: HANDLING INCOMING MESSAGES
-@client.event
+# Handle incoming messages
+@bot.event
 async def on_message(message: Message) -> None:
-    if message.author == client.user or message.author.bot or message.content[0] != '!':
+    # Ignore irrelevant messages
+    if message.author.bot or message.content[0] != '!':
         return
 
+    # Remove '!' from message content
     message.content = message.content[1:]
     
+    # Print message information
     username: str = str(message.author)
     user_message: str = message.content
     channel: str = str(message.channel)
-    
     print(f'[{channel}] {username}: "{user_message}"')
-    await send_message(message)
+    
+    # Get responses asynchronously
+    await get_responses(message)
 
+# Run the bot
 if __name__ == '__main__':
-    client.run(token=TOKEN)
+    bot.run(token=TOKEN)
