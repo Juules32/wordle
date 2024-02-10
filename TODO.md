@@ -1,0 +1,3 @@
+- [ ] Save data
+- [ ] Show used letters
+- [ ] Limit guesses
